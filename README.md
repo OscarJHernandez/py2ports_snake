@@ -1,100 +1,71 @@
-# py2port_pygame_template
+# py2ports Snake
 
-A standalone Pygame starter game and GitHub repository template. Move a square
-with the keyboard or a gamepad, then build your own game from this working loop.
-The game runs on a normal computer without py2ports, Docker, or a handheld.
+Eat food, grow and fill a 20×15 board. Walls and your own body end the run;
+every five foods increase the speed.
 
-This template is public and [MIT-licensed](LICENSE), including its inherited
-game code, with the owner's authorization for public redistribution. Preserve
-the license and origin attribution in games made from it.
+A complete desktop and ARM64 Knulli game, created through **Use this template**
+from [py2port_pygame_template](https://github.com/OscarJHernandez/py2port_pygame_template).
 
-## Create your own game
+## Play on desktop
 
-1. Open [py2port_pygame_template](https://github.com/OscarJHernandez/py2port_pygame_template).
-2. Select **Use this template → Create a new repository**.
-3. Choose your game's repository name and visibility (public or private).
-4. Clone your new repository and run:
+You need Python 3.11+ and Make. No Docker or handheld is needed.
 
 ```sh
-git clone https://github.com/YOU/YOUR-GAME.git
-cd YOUR-GAME
-make setup
+git clone https://github.com/OscarJHernandez/py2ports_snake.git
+cd py2ports_snake
+make setup  # or: make setup PYTHON=python3.12
 make run
-```
-
-You need Python 3.11+ and Make. If your default Python is older, use
-`make setup PYTHON=python3.12`. GitHub creates independent history for your
-template-generated repository; you do not need to fork or clone the original
-game repository's history.
-
-To try this template itself, clone this repository and use the same Make commands.
-
-## Controls and tests
-
-- Move: arrow keys or a gamepad D-pad.
-- Exit: Escape, window close, or gamepad buttons 6, 9, or 10.
-
-```sh
 make test
 ```
 
-The desktop smoke test runs the real entrypoint for one frame with dummy SDL
-video/audio and posts a quit event. It does not contact a handheld.
+Desktop dependencies stay pinned to `pygame==2.6.1`. The entrypoint is
+`src/run.py`; headless verification is `python src/run.py --smoke-test` after setup.
 
-Without Make, create a virtual environment, install `requirements.txt`, then run
-`python src/run.py` and `python -m unittest discover -s tests`.
+## Controls
 
-## Customize
+| Action | Keyboard | Controller |
+| --- | --- | --- |
+| Turn | Arrows / WASD | D-pad / left stick |
+| Play / resume | Enter / Space | A |
+| Pause / resume | P | Start |
+| Pause / back to menu / exit from menu | Escape | B / Back |
+| Exit | Q / close window | B from menu |
 
-```text
-src/main.py             # game loop, drawing, input, screen size and frame rate
-src/run.py              # thin desktop entrypoint
-assets/                 # add your own images, sounds and fonts
-tests/test_desktop.py   # headless entrypoint smoke test
-requirements.txt        # desktop dependencies
-Makefile                # setup, play and test
-```
+SDL controller mappings provide standard buttons. Unmapped joysticks use their
+hat or axes 0/1, button 0 to confirm, 1/6 to go back and 7 to pause. Connect a
+controller before launch or hot-plug it. Remap nonstandard devices through SDL
+`SDL_GAMECONTROLLERCONFIG`. Loss of window focus pauses the game.
 
-Start by editing `src/main.py`; keep `src/run.py` as a thin entrypoint. Resolve
-assets relative to your source files as described in `assets/README.md`. Add
-tests as your game develops. Do not commit credentials, virtual environments,
-generated packages, or private build outputs.
+Graphics scale from 640×480 with letterboxing. Set
+`SNAKE_FULLSCREEN=1` for fullscreen; py2ports configures this on the handheld.
+Scores use `PY2PORTS_DATA_DIR` when deployed, or
+`$XDG_DATA_HOME/py2ports_snake/scores.json` (default `~/.local/share/...`) on desktop.
+Unreadable or unwritable scores do not prevent play.
 
-## Deploy your game with py2ports
+## Play on Knulli
 
-From your separate py2ports checkout:
+In a separate [py2ports](https://github.com/OscarJHernandez/py2ports) checkout:
 
 ```sh
-.venv/bin/py2ports add https://github.com/YOU/YOUR-GAME.git \
-    --name my_game --entrypoint src/run.py
-make validate GAME=my_game
+make setup
 make check-device
-make deploy GAME=my_game
+make deploy GAME=py2ports_snake
+# If knulli cannot be resolved, append DEVICE_HOST=192.168.1.50.
 ```
 
-Review the generated manifest and set `include = ["src", "assets", "README.md", "LICENSE"]`.
-Keep `publish = false` unless you intend public releases and all game content
-and dependencies permit redistribution. Commit the manifest, `.gitmodules`, and pinned gitlink
-in py2ports. Use `DEVICE_HOST=<device-IP>` if the hostname `knulli` is unavailable.
-Deployment checks the device before building and preserves other installed games.
+Open **Ports → py2ports_snake**. The existing runtime uses Python 3.12.8 and
+Pygame-CE 2.5.6. Knulli build, runtime and deployment configuration stays in
+py2ports. Physical display, controls and firmware compatibility still require
+verification on your device. Automated tests never contact a handheld.
 
-Knulli runtime, launcher, and SSH configuration belong in py2ports, not this
-standalone template. Desktop requirements retain `pygame==2.6.1`; the existing
-py2ports device profile supplies Pygame-CE 2.5.6 and Python 3.12.8.
-For saves, deployed games can use `PY2PORTS_DATA_DIR` supplied by the launcher.
+## Template origin and license
 
-## Origin and license
-
-The unchanged `src/main.py` and `src/run.py` originate from Oscar Javier
-Hernandez's private `OscarJHernandez/python_game` repository at commit
-`8a63594750dea6553a5e44dabe6e7a737371b747`, copied with the owner's
-authorization. This repository starts with a new root commit; the original
-repository and the earlier `py2ports-example-game` repository are unchanged.
-No assets were tracked in the original revision.
-
-The owner has authorized releasing this template, including the inherited game
-code, under the MIT license in this repository. This authorization supersedes
-the earlier private-distribution restriction for this template. The original
-repositories remain private and unchanged. Future third-party assets retain
-their own licenses. Preserve this origin attribution and the MIT notice when
-creating a game from the template. This is unofficial and not affiliated with Knulli.
+MIT licensed; retain [LICENSE](LICENSE) and this attribution. The template's
+original movement-demo code and thin entrypoint originated in Oscar Javier
+Hernandez's `python_game` revision `8a63594750dea6553a5e44dabe6e7a737371b747`.
+The owner authorized public MIT redistribution of the template and derived games.
+This repository has independent template-generated history; `TEMPLATE_ORIGIN.json`
+records the source template revision and initial tree. Snake gameplay,
+procedural artwork and tests were developed after generation. Pygame and its
+default font retain their own licenses. This project is unofficial and not
+affiliated with Knulli.

@@ -1,14 +1,3 @@
-# Game assets
-
-Add your images, sounds, fonts, and other game assets here. The starter movement
-demo does not require any assets.
-
-Resolve paths from your source file rather than the current working directory:
-
-```python
-from pathlib import Path
-ASSETS = Path(__file__).resolve().parents[1] / "assets"
-```
-
-Include this directory in your game's py2ports manifest when packaging. Check
-the license and attribution requirements of any assets you add.
+All game artwork is drawn procedurally by the MIT-licensed game code.
+No external art, fonts or audio assets are required. Pygame supplies its default
+font under its own redistribution terms, included in the py2ports runtime.

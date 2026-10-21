@@ -1,67 +1,104 @@
+"""Snake gameplay, developed from the public py2port_pygame_template."""
+import random
+
 import pygame
-
-WIDTH = 640
-HEIGHT = 480
-FPS = 60
+from app import PANEL, run
 
 
-def main() -> None:
-    pygame.init()
+class Game:
+    title = "py2ports Snake"
+    subtitle = "Eat. Grow. Beat your best."
+    hint = "D-pad / stick / WASD: turn     Start / P: pause"
+    accent = (92, 231, 164)
+    columns, rows = 20, 15
+    directions = {"left": (-1, 0), "right": (1, 0), "up": (0, -1), "down": (0, 1)}
 
-    joystick = None
-    if pygame.joystick.get_count() > 0:
-        joystick = pygame.joystick.Joystick(0)
-        joystick.init()
+    def __init__(self, seed=None):
+        self.random = random.Random(seed)
+        self.reset()
+        self.state = "menu"
 
-    screen = pygame.display.set_mode((WIDTH, HEIGHT))
-    clock = pygame.time.Clock()
+    def reset(self):
+        self.snake = [(10, 7), (9, 7), (8, 7)]
+        self.direction = self.pending = (1, 0)
+        self.turned = False
+        self.score, self.elapsed = 0, 0.0
+        self.state = "playing"
+        self.place_food()
 
-    x = WIDTH // 2
-    y = HEIGHT // 2
-    speed = 4
-    running = True
+    @property
+    def speed(self):
+        return min(16, 7 + self.score // 50)
 
-    while running:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
+    def place_food(self):
+        free = [(x, y) for y in range(self.rows) for x in range(self.columns) if (x, y) not in self.snake]
+        self.food = self.random.choice(free) if free else None
+        if not free:
+            self.state = "won"
 
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                running = False
+    def handle(self, action):
+        if action == "confirm":
+            if self.state == "paused":
+                self.state = "playing"
+            elif self.state in ("menu", "over", "won"):
+                self.reset()
+        elif action == "pause" and self.state in ("playing", "paused"):
+            self.state = "paused" if self.state == "playing" else "playing"
+        elif action == "back":
+            self.state = "paused" if self.state == "playing" else "menu"
+        elif action in self.directions and self.state == "playing" and not self.turned:
+            direction = self.directions[action]
+            if direction != self.direction and direction != (-self.direction[0], -self.direction[1]):
+                self.pending = direction
+                self.turned = True
 
-            if event.type == pygame.JOYBUTTONDOWN:
-                if event.button in (6, 9, 10):
-                    running = False
+    def step(self):
+        if self.state != "playing":
+            return
+        self.direction, self.turned = self.pending, False
+        x, y = self.snake[0]
+        head = (x + self.direction[0], y + self.direction[1])
+        growing = head == self.food
+        body = self.snake if growing else self.snake[:-1]
+        if not (0 <= head[0] < self.columns and 0 <= head[1] < self.rows) or head in body:
+            self.state = "over"
+            return
+        self.snake.insert(0, head)
+        if growing:
+            self.score += 10
+            self.place_food()
+        else:
+            self.snake.pop()
 
-        keys = pygame.key.get_pressed()
+    def update(self, dt, horizontal=0):
+        if self.state != "playing":
+            return
+        self.elapsed += min(dt, 0.25)
+        while self.elapsed >= 1 / self.speed and self.state == "playing":
+            self.elapsed -= 1 / self.speed
+            self.step()
 
-        if keys[pygame.K_LEFT]:
-            x -= speed
-        if keys[pygame.K_RIGHT]:
-            x += speed
-        if keys[pygame.K_UP]:
-            y -= speed
-        if keys[pygame.K_DOWN]:
-            y += speed
+    def draw(self, view):
+        surface = view.surface
+        pygame.draw.rect(surface, PANEL, (76, 96, 488, 364), border_radius=8)
+        for y in range(self.rows):
+            for x in range(self.columns):
+                pygame.draw.rect(surface, (28, 43, 57) if (x+y) % 2 else (25, 39, 52), (80+x*24, 98+y*24, 23, 23))
+        if self.food:
+            x, y = self.food
+            pygame.draw.circle(surface, (255, 122, 112), (92+x*24, 110+y*24), 8)
+            pygame.draw.circle(surface, (255, 205, 165), (90+x*24, 107+y*24), 3)
+        for index, (x, y) in enumerate(self.snake):
+            pygame.draw.rect(surface, self.accent if index == 0 else (49, 158, 123), (82+x*24, 100+y*24, 20, 20), border_radius=5)
+        x, y = self.snake[0]
+        dx, dy = self.direction
+        for offset in (-4, 4):
+            pygame.draw.circle(surface, (12, 32, 35), (92+x*24+dx*5+(offset if dy else 0), 110+y*24+dy*5+(offset if dx else 0)), 2)
 
-        if joystick:
-            hx, hy = joystick.get_hat(0)
-            x += hx * speed
-            y -= hy * speed
 
-        screen.fill((20, 20, 30))
-        pygame.draw.rect(screen, (230, 230, 100), (x, y, 24, 24))
-        pygame.display.flip()
-
-        clock.tick(FPS)
-
-    pygame.quit()
+def main():
+    run(Game, "py2ports_snake", "SNAKE_FULLSCREEN")
 
 
 if __name__ == "__main__":
-    try:
-        main()
-    except Exception:
-        import traceback
-        traceback.print_exc()
-        raise
+    main()

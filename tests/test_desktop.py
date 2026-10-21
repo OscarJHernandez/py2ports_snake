@@ -1,32 +1,21 @@
-"""Run the real entrypoint for a frame without editing the game logic."""
+"""Exercise the public game's real entrypoint without a display or device."""
 import os
 from pathlib import Path
-import runpy
+import subprocess
 import sys
+import tempfile
 import unittest
-from unittest.mock import patch
-
-os.environ.update(SDL_VIDEODRIVER="dummy", SDL_AUDIODRIVER="dummy")
-import pygame
 
 
 class DesktopSmoke(unittest.TestCase):
     def test_entrypoint(self):
-        source = Path(__file__).resolve().parents[1] / "src"
-        sys.path.insert(0, str(source))
-        original = pygame.display.set_mode
-
-        def display(*args, **kwargs):
-            screen = original(*args, **kwargs)
-            pygame.event.post(pygame.event.Event(pygame.QUIT))
-            return screen
-
-        try:
-            with patch.object(pygame.display, "set_mode", display):
-                runpy.run_path(str(source / "run.py"), run_name="__main__")
-        finally:
-            sys.path.remove(str(source))
-            pygame.quit()
+        root = Path(__file__).resolve().parents[1]
+        with tempfile.TemporaryDirectory() as saves:
+            environment = dict(os.environ, SDL_VIDEODRIVER="dummy", SDL_AUDIODRIVER="dummy", PY2PORTS_DATA_DIR=saves)
+            result = subprocess.run([sys.executable, str(root / "src/run.py"), "--smoke-test"], env=environment,
+                                    capture_output=True, text=True, timeout=15, cwd=root)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn("120 headless frames", result.stdout)
 
 
 if __name__ == "__main__":
